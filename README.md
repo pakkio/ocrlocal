@@ -100,6 +100,36 @@ uv run fix_symbols.py output/documento.md               # → documento_fixed.md
 
 `fix_symbols.py` esce subito se non trova `■`. `describe_figures.py` salta le immagini non trovate.
 
+## Esempio reale: tesi di ingegneria scansionata
+
+Scenario: tesi di 120 pagine in italiano, scansionata (no testo selezionabile), con grafici matplotlib, tabelle di dati e formule con ℝⁿ, λᵢ, ωₙ.
+
+```bash
+# 1. Converti — Marker rileva la scansione e avvia OCR su GPU (~35 min)
+uv run convert.py tesi_scansionata.pdf output it
+# → output/tesi_scansionata.md  (testo + tabelle in Markdown)
+# → output/tesi_scansionata/    (23 figure estratte come JPEG)
+
+# 2. Descrivi le 23 figure in italiano (~6 min con minicpm-v offline)
+uv run describe_figures.py output/tesi_scansionata.md
+# → output/tesi_scansionata_described.md
+#   Ogni ![]() diventa:
+#   ![Grafico della risposta al gradino con ζ=0.5 e ωₙ=10 rad/s...](fig.jpeg)
+#   > **Figura:** Grafico della risposta al gradino...
+
+# 3. Ricostruisci i simboli Unicode persi dall'OCR (~18 min con gemma4)
+uv run fix_symbols.py output/tesi_scansionata_described.md
+# → output/tesi_scansionata_described_fixed.md   ← file finale completo
+#   "il vettore ■(t) ∈ ■ⁿ"  →  "il vettore x(t) ∈ ℝⁿ"
+```
+
+Risultato finale: Markdown leggibile con figure descritte e simboli matematici corretti, pronto per indicizzazione, ricerca full-text o input a un RAG.
+
+**Stesso documento con PDF digitale** (testo selezionabile, nessuna scansione):
+```bash
+uv run convert.py tesi_digitale.pdf output it   # pdfplumber: ~12s invece di 35 min
+```
+
 ## Qualità e limiti
 
 | Elemento | Qualità |
