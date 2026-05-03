@@ -15,8 +15,8 @@ Pipeline locale PDF → Markdown con descrizione automatica delle figure via LLM
 
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv)
-- GPU NVIDIA con CUDA 12.x (facoltativo ma consigliato — ~4x più veloce)
-- API key OpenRouter per la descrizione figure
+- GPU NVIDIA con CUDA 12.x e **almeno 6 GB VRAM** (facoltativo ma consigliato — ~4x più veloce; su CPU funziona ma lento)
+- [Ollama](https://ollama.com) con `minicpm-v` per descrizione figure offline — oppure API key OpenRouter per modalità cloud
 
 ## Installazione
 
