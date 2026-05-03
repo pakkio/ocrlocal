@@ -85,14 +85,20 @@ Produce `output/documento_fixed.md`: ogni `■` (simbolo Unicode perso dall'OCR)
 
 ### Workflow completo
 
+**Con figure e simboli matematici:**
 ```bash
-uv run convert.py documento.pdf output it        # auto: pdfplumber o Marker
-uv run describe_figures.py output/documento.md   # solo se ci sono figure
-uv run fix_symbols.py output/documento.md        # solo se ci sono simboli ■
-# risultati finali: output/documento_described.md + output/documento_fixed.md
+uv run convert.py documento.pdf output it
+uv run describe_figures.py output/documento.md          # → documento_described.md
+uv run fix_symbols.py output/documento_described.md     # → documento_described_fixed.md
 ```
 
-I passi 2 e 3 sono opzionali e idempotenti: `describe_figures.py` salta le pagine senza immagini, `fix_symbols.py` esce subito se non trova `■`.
+**Solo simboli matematici (nessuna figura):**
+```bash
+uv run convert.py documento.pdf output it
+uv run fix_symbols.py output/documento.md               # → documento_fixed.md
+```
+
+`fix_symbols.py` esce subito se non trova `■`. `describe_figures.py` salta le immagini non trovate.
 
 ## Qualità e limiti
 
