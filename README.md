@@ -6,6 +6,7 @@ Pipeline locale PDF → Markdown con descrizione automatica delle figure via LLM
 
 ## Funzionalità
 
+- Routing automatico: pdfplumber per PDF digitali semplici (sub-secondo/pagina), Marker+OCR per PDF complessi o scansionati
 - Converte PDF in Markdown strutturato (testo, tabelle, heading, formule LaTeX)
 - Estrae figure/fotografie come immagini JPEG
 - Descrive ogni figura in italiano tramite un modello vision (Gemini 2.5 Flash via OpenRouter o minicpm-v via Ollama)
@@ -85,11 +86,13 @@ Produce `output/documento_fixed.md`: ogni `■` (simbolo Unicode perso dall'OCR)
 ### Workflow completo
 
 ```bash
-uv run convert.py documento.pdf output it
-uv run describe_figures.py output/documento.md
-uv run fix_symbols.py output/documento.md
+uv run convert.py documento.pdf output it        # auto: pdfplumber o Marker
+uv run describe_figures.py output/documento.md   # solo se ci sono figure
+uv run fix_symbols.py output/documento.md        # solo se ci sono simboli ■
 # risultati finali: output/documento_described.md + output/documento_fixed.md
 ```
+
+I passi 2 e 3 sono opzionali e idempotenti: `describe_figures.py` salta le pagine senza immagini, `fix_symbols.py` esce subito se non trova `■`.
 
 ## Qualità e limiti
 
@@ -105,12 +108,15 @@ I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con ha
 
 ## Performance
 
-**Conversione PDF → Markdown (GTX 1080):**
+**Conversione PDF → Markdown:**
 
-| Hardware | Tempo (PDF 5 pag.) |
-|---|---|
-| CPU | ~5 min |
-| GTX 1080 (8 GB VRAM) | ~85s |
+| Percorso | Condizione | Tempo (5 pag.) | Tempo (500 pag.) |
+|---|---|---|---|
+| pdfplumber | PDF digitale, no immagini/tabelle | ~0.5s | ~5 min |
+| Marker + CPU | PDF complesso | ~5 min | ~8 ore |
+| Marker + GTX 1080 | PDF complesso | ~85s | ~2.5 ore |
+
+Il routing è automatico: `convert.py` sceglie il percorso in base al contenuto del PDF.
 
 **Correzione simboli Unicode (fix_symbols.py, GTX 1080):**
 
