@@ -68,10 +68,23 @@ def describe_via_openrouter(img_path: Path, client) -> str:
     return response.choices[0].message.content.strip()
 
 
+def _ollama_has_model(model: str) -> bool:
+    import urllib.request, json
+    try:
+        with urllib.request.urlopen(f"{OLLAMA_BASE_URL}/api/tags", timeout=5) as r:
+            data = json.loads(r.read())
+        names = [m["name"] for m in data.get("models", [])]
+        return any(n == model or n.startswith(model + ":") for n in names)
+    except Exception:
+        return False
+
+
 def build_client():
-    if OLLAMA_MODEL:
+    if OLLAMA_MODEL and _ollama_has_model(OLLAMA_MODEL):
         print(f"Modalità: Ollama locale ({OLLAMA_MODEL})")
         return None
+    if OLLAMA_MODEL:
+        print(f"  [warn] modello Ollama '{OLLAMA_MODEL}' non disponibile — fallback OpenRouter")
     if OPENROUTER_API_KEY:
         from openai import OpenAI
         print(f"Modalità: OpenRouter ({VISION_MODEL})")
@@ -81,7 +94,7 @@ def build_client():
 
 
 def describe_image(img_path: Path, client) -> str:
-    if OLLAMA_MODEL:
+    if client is None:
         return describe_via_ollama(img_path)
     return describe_via_openrouter(img_path, client)
 

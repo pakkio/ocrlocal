@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 from pathlib import Path
 
 
@@ -64,6 +65,15 @@ def _convert_marker(pdf_path: Path, out_dir: Path, langs: list[str]) -> Path:
     return out_file
 
 
+def _has_images(md_file: Path) -> bool:
+    text = md_file.read_text(encoding="utf-8")
+    return bool(re.search(r"!\[\]\([^)]+\)", text))
+
+
+def _has_broken_symbols(md_file: Path) -> bool:
+    return "■" in md_file.read_text(encoding="utf-8")
+
+
 def convert(pdf_path: str, output_dir: str = "output", langs: list[str] = ["it"]):
     pdf_path = Path(pdf_path)
     if not pdf_path.exists():
@@ -82,6 +92,25 @@ def convert(pdf_path: str, output_dir: str = "output", langs: list[str] = ["it"]
         print("PDF complesso rilevato (scansione / immagini / tabelle) — uso Marker+OCR")
         out_file = _convert_marker(pdf_path, out_dir, langs)
         print(f"Salvato: {out_file}")
+
+    if _has_images(out_file):
+        print("\nFigure rilevate — avvio descrizione automatica...")
+        try:
+            import describe_figures
+            describe_figures.process(str(out_file))
+            described = out_file.parent / (out_file.stem + "_described.md")
+            if described.exists():
+                out_file = described
+        except Exception as e:
+            print(f"  [warn] descrizione figure non riuscita: {e}")
+
+    if _has_broken_symbols(out_file):
+        print("\nSimboli ■ rilevati — avvio correzione automatica...")
+        try:
+            import fix_symbols
+            fix_symbols.process(str(out_file))
+        except Exception as e:
+            print(f"  [warn] correzione simboli non riuscita: {e}")
 
 
 if __name__ == "__main__":
