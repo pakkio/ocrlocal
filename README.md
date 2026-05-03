@@ -8,8 +8,9 @@ Pipeline locale PDF → Markdown con descrizione automatica delle figure via LLM
 
 - Converte PDF in Markdown strutturato (testo, tabelle, heading, formule LaTeX)
 - Estrae figure/fotografie come immagini JPEG
-- Descrive ogni figura in italiano tramite un modello vision (Gemini 2.5 Flash via OpenRouter)
-- Gira interamente in locale — nessun dato inviato a cloud salvo le immagini al modello vision
+- Descrive ogni figura in italiano tramite un modello vision (Gemini 2.5 Flash via OpenRouter o minicpm-v via Ollama)
+- Ricostruisce i simboli matematici Unicode persi dall'OCR (ℝⁿ, λᵢ, ωₙ) tramite LLM testuale locale
+- Modalità completamente offline: nessun dato esce dalla macchina (Ollama per vision + testo)
 
 ## Requisiti
 
@@ -73,12 +74,21 @@ uv run describe_figures.py output/documento.md
 
 Produce `output/documento_described.md`: ogni `![]()` viene sostituito con alt-text descrittivo generato dal modello vision + blocco citazione.
 
+### 3. Correggi i simboli matematici
+
+```bash
+uv run fix_symbols.py output/documento.md
+```
+
+Produce `output/documento_fixed.md`: ogni `■` (simbolo Unicode perso dall'OCR) viene ricostruito tramite LLM testuale in base al contesto matematico. Richiede Ollama con un modello testuale (es. `gemma4` o `gemma3:4b`).
+
 ### Workflow completo
 
 ```bash
 uv run convert.py documento.pdf output it
 uv run describe_figures.py output/documento.md
-# risultato finale: output/documento_described.md
+uv run fix_symbols.py output/documento.md
+# risultati finali: output/documento_described.md + output/documento_fixed.md
 ```
 
 ## Qualità e limiti
@@ -88,10 +98,10 @@ uv run describe_figures.py output/documento.md
 | Testo italiano | Eccellente |
 | Tabelle | Eccellente |
 | Formule LaTeX semplici | Buona |
-| Simboli matematici Unicode (ℝⁿ, λᵢ, ωₙ) | Parziale — sostituiti con `■` |
+| Simboli matematici Unicode (ℝⁿ, λᵢ, ωₙ) | Buona — ricostruiti con `fix_symbols.py` via LLM |
 | Figure / fotografie | Estratte + descritte via LLM |
 
-I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con hardware migliore. Per LaTeX pesante (tesi scientifiche) valutare Nougat o GOT-OCR.
+I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con hardware migliore. `fix_symbols.py` li ricostruisce tramite contesto matematico con gemma4 (18/18 corretti nel test, ~266s). Per LaTeX pesante (tesi scientifiche) valutare Nougat o GOT-OCR.
 
 ## Performance
 
@@ -101,6 +111,13 @@ I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con ha
 |---|---|
 | CPU | ~5 min |
 | GTX 1080 (8 GB VRAM) | ~85s |
+
+**Correzione simboli Unicode (fix_symbols.py, GTX 1080):**
+
+| Modello | Tempo (18 simboli, 5 pag.) | VRAM | Privacy |
+|---|---|---|---|
+| gemma4 (Ollama) | ~266s | 9.6 GB | totale |
+| gemma3:4b (Ollama) | ~60s | 3.5 GB | totale (qualità inferiore) |
 
 **Descrizione figure (per immagine, GTX 1080):**
 
@@ -116,5 +133,6 @@ I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con ha
 |---|---|
 | `convert.py` | Conversione PDF → Markdown |
 | `describe_figures.py` | Descrizione figure via LLM vision |
+| `fix_symbols.py` | Ricostruzione simboli Unicode ■ via LLM testuale |
 | `crea_pdf.py` | Genera PDF di test (testo + tabelle + formule) |
 | `crea_pdf_grafici.py` | Genera PDF di test con grafici matplotlib |
