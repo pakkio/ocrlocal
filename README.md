@@ -169,10 +169,27 @@ Il routing è automatico: `convert.py` sceglie il percorso in base al contenuto 
 | gemma4 (Ollama) | ~56s | 9.6 GB | totale |
 | Gemini 2.5 Flash (OpenRouter) | ~5s | — | immagini in cloud |
 
+## Web server
+
+```bash
+uv run python -m uvicorn server:app --reload
+```
+
+Apri `http://localhost:8000` per il form di upload. Oppure via API:
+
+```bash
+curl -X POST http://localhost:8000/convert \
+  -F "file=@documento.pdf" \
+  -F "langs=it"
+```
+
+Il PDF viene processato in una directory temporanea e cancellato dopo la risposta.
+
 ## File
 
 | File | Scopo |
 |---|---|
+| `server.py` | Web server FastAPI (upload PDF → Markdown) |
 | `convert.py` | Conversione PDF → Markdown |
 | `describe_figures.py` | Descrizione figure via LLM vision |
 | `fix_symbols.py` | Ricostruzione simboli Unicode ■ via LLM testuale |

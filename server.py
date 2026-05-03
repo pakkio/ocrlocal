@@ -5,7 +5,7 @@ Routes automatically: pdfplumber for simple digital PDFs (sub-second),
 Marker+OCR for scanned/complex PDFs (minutes).
 
 Usage:
-    uv run uvicorn server:app --reload
+    uv run python -m uvicorn server:app --reload
     open http://localhost:8000
 """
 import tempfile
