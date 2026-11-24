@@ -140,7 +140,40 @@ uv run convert.py tesi_digitale.pdf output it   # pdfplumber: ~12s invece di 35 
 | Simboli matematici Unicode (ℝⁿ, λᵢ, ωₙ) | Buona — ricostruiti con `fix_symbols.py` via LLM |
 | Figure / fotografie | Estratte + descritte via LLM |
 
+> I giudizi della tabella sono impressioni d'uso, **non misure**: nessuno li ha mai confrontati con un testo di riferimento. Vedi [Valutazione OCR](#valutazione-ocr) per il modo di misurarli.
+
 I caratteri Unicode avanzati sono un limite di Surya OCR, non risolvibile con hardware migliore. `fix_symbols.py` li ricostruisce tramite contesto matematico con gemma4 (18/18 corretti nel test, ~266s). Per LaTeX pesante (tesi scientifiche) valutare Nougat o GOT-OCR.
+
+## Valutazione OCR
+
+`eval_ocr.py` misura l'errore (CER = errori sui caratteri, WER = errori sulle parole) confrontando l'output con un testo noto: genera un PDF da un corpus italiano, lo rasterizza in un PDF **senza strato di testo** (come una scansione), lo degrada (risoluzione, sfocatura, rotazione, JPEG) e lo passa al motore.
+
+```bash
+uv run eval_ocr.py --self-test                          # controlla il banco di prova (non serve la GPU)
+uv run eval_ocr.py --engine marker --engine tesseract   # misura Marker, con Tesseract come riferimento
+uv run eval_ocr.py --engine marker --pair tesi.pdf tesi_trascritta.txt   # su un documento vero
+```
+
+Il banco di prova è stato validato con Tesseract 5.3 (`ita`): CER 0,04% sul PDF digitale, 0,08% a 200 dpi, 0,9% a 90 dpi, 15% a 75 dpi, 26% a 65 dpi; `pdfplumber` sulle scansioni dà 100% (nessun OCR), come deve. **Questi non sono i numeri di Marker**: il motore `marker` richiede GPU e pesi Surya e va lanciato a mano. Quando lo fai, incolla qui la tabella.
+
+Limiti: il corpus è prosa pulita, quindi misura un errore *minimo*; tabelle, formule, simboli Unicode, layout a colonne e scansioni vere richiedono un documento reale con trascrizione (`--pair`).
+
+## Licenze
+
+*(verificato il 24/11/2026 sui README e sul `MODEL_LICENSE` di [marker](https://github.com/datalab-to/marker) e [surya](https://github.com/datalab-to/surya); non è consulenza legale, il testo che vale è quello nei repo)*
+
+| Cosa | Licenza |
+|---|---|
+| Questo repo | nessun file `LICENSE`: per default tutti i diritti sono riservati |
+| Codice di Marker e di Surya | Apache 2.0 |
+| **Pesi dei modelli** (scaricati da HuggingFace alla prima conversione) | "AI Pubs Open RAIL-M (Modified)" v0.1, file `MODEL_LICENSE` |
+
+I pesi hanno condizioni diverse dal codice:
+
+- **Uso di ricerca e personale:** esente dalle soglie economiche qui sotto.
+- **Uso commerciale:** ristretto se tu, il tuo datore di lavoro o un'entità affiliata avete avuto più di 5 milioni di USD di ricavi lordi nell'anno precedente **oppure** avete raccolto più di 5 milioni di USD di finanziamenti totali (capitale o debito). Basta una delle due: è gratuito solo restando sotto entrambe.
+- **Prodotti concorrenti:** vietato offrire prodotti o servizi che competono con quelli di Datalab, **senza** eccezione per ricerca o uso personale. La licenza considera distribuzione anche i servizi hosted, l'accesso via API e via web: se esponi `server.py` a terzi, conta.
+- **Attenzione ai riassunti:** i README di marker e surya scrivono "startups under $5M funding/revenue" senza dire se le soglie siano in E o in O. Il `MODEL_LICENSE` dice O (una sola basta per la restrizione). Per un uso commerciale leggi il file, non il riassunto; per licenze oltre le soglie i README rimandano alla pagina prezzi di Datalab.
 
 ## Performance
 
@@ -193,5 +226,6 @@ Il PDF viene processato in una directory temporanea e cancellato dopo la rispost
 | `convert.py` | Conversione PDF → Markdown |
 | `describe_figures.py` | Descrizione figure via LLM vision |
 | `fix_symbols.py` | Ricostruzione simboli Unicode ■ via LLM testuale |
+| `eval_ocr.py` | Misura CER/WER di un motore OCR su PDF a testo noto (`--self-test` per il banco di prova) |
 | `crea_pdf.py` | Genera PDF di test (testo + tabelle + formule) |
 | `crea_pdf_grafici.py` | Genera PDF di test con grafici matplotlib |

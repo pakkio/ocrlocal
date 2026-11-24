@@ -39,14 +39,15 @@ def _convert_pdfplumber(pdf_path: Path, out_dir: Path) -> Path:
     return out_file
 
 
-def _convert_marker(pdf_path: Path, out_dir: Path, langs: list[str]) -> Path:
+def _convert_marker(pdf_path: Path, out_dir: Path, langs: list[str], models=None) -> Path:
     from marker.converters.pdf import PdfConverter
     from marker.models import create_model_dict
     from marker.output import text_from_rendered
     from marker.config.parser import ConfigParser
 
-    print("Caricamento modelli Marker...")
-    models = create_model_dict()
+    if models is None:  # eval_ocr.py passa i modelli gia' caricati per non ricaricarli a ogni PDF
+        print("Caricamento modelli Marker...")
+        models = create_model_dict()
     config = ConfigParser({"langs": ",".join(langs)})
     converter = PdfConverter(artifact_dict=models, config=config.generate_config_dict())
     rendered = converter(str(pdf_path))
